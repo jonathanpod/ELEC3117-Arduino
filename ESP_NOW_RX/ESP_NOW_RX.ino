@@ -1,17 +1,7 @@
-/*
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/esp-now-esp8266-nodemcu-arduino-ide/
-  
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files.
-  
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-*/
-
 #include <ESP8266WiFi.h>
 #include <espnow.h>
 
+// ----------------- WI-FI INITIALISATION -----------------
 // Structure example to receive data
 // Must match the sender structure
 typedef struct struct_message {
@@ -21,7 +11,11 @@ typedef struct struct_message {
 // Create a struct_message called myData
 struct_message myData;
 
-// ----------- FUNCTIONS ------------
+// ----------------- CONSTANTS -------------------
+#define HIGH_TEMP 28
+#define LOW_TEMP 20
+
+// --------------------- USER-DEFINED FUNCTIONS --------------------------
 
 // Callback function that will be executed when data is received
 
@@ -33,6 +27,7 @@ void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
   Serial.println();
 }
 
+// ---------------------- MAIN -----------------------
 void setup() {
   // Initialize Serial Monitor
   Serial.begin(9600);
@@ -70,10 +65,10 @@ void loop() {
     button_flag = 1;
     delay(10);    // This delay is used for debouncing.
   }
-  if (!(myData.temp_c >= 28 || myData.temp_c <= 20)){
+  if (!(myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     button_flag = 0;
   }
-  if (myData.temp_c >= 28 || myData.temp_c <= 20) {
+  if (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP) {
     digitalWrite(16, HIGH);
   } else {
     digitalWrite(16, LOW);

@@ -28,7 +28,7 @@ unsigned long timer_delay = 360000; // Timer delay = 6 minutes initially
 int reading_count = 0;
 float temperature_array[5];
 
-// --------------------- PRE-DEFINED FUNCTIONS --------------------------
+// --------------------- USER-DEFINED FUNCTIONS --------------------------
 
 // Callback when data is sent
 void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
