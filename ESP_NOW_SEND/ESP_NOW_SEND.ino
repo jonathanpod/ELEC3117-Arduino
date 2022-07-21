@@ -24,8 +24,9 @@ struct_message myData;
 
 // ----------------- GLOBAL VARIABLES -------------------
 unsigned long last_time = 0;  
-unsigned long timer_delay = 360000; // Timer delay = 6 minutes initially
+unsigned long timer_delay = 3000; // Timer delay = 3 seconds initially
 int reading_count = 0;
+int flag = 0;
 float temperature_array[5];
 
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
@@ -73,7 +74,6 @@ void setup() {
   tempsensor.setResolution(3);
 }
 
-
 void loop() {
   if ((millis() - last_time) > timer_delay) {    
     
@@ -81,36 +81,57 @@ void loop() {
     tempsensor.wake(); 
     float c = tempsensor.readTempC();
 
-    delay(2000);
+    delay(1000);
     tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
     delay(200);
 
     // Set values to send
     myData.temp_c = c;
-    Serial.print(c, 4); 
-    Serial.println("*C\t");
-    
+
     // If reading is higher or lower than threshold.
     if (c >= HIGH_TEMP || c <= LOW_TEMP) {
       // Increase sampling time and alert the receiver.
       esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
-      timer_delay = 10000;  // Set new sampling interval to 10 seconds.
+      timer_delay = 2000;  // Set new sampling interval to 2 seconds.
 
       reading_count = 0;
+
+      Serial.print("WARNING! ");
+      Serial.print(c, 4);
+      Serial.println("*C\t");
+
+      flag = 1; 
+      
+    } else if (flag == 1 && c <= HIGH_TEMP && c >= LOW_TEMP){
+      
+      myData.temp_c = c;
+      esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
+      flag = 0;
       
     } else {
-      timer_delay = 360000; // Else set it to 6 minutes.
+      timer_delay = 3000; // Else set it to 3 seconds.
       
       // Append to temperature_array.
-      temperature_array[reading_count];    
+      temperature_array[reading_count] = c;    
       reading_count++;
 
       // If it has read 5 values, average and reset the counter.
       // Normal state means that temperature value is within the range.
       if (reading_count >= 5) {
         float avg_temp = temperature_array[0] + temperature_array[1] + temperature_array[2] + temperature_array[3] + temperature_array[4];
-        avg_temp = (1/5) * avg_temp;
+        avg_temp = avg_temp / 5;
 
+        Serial.println("START");
+        Serial.println(temperature_array[0]);
+        Serial.println(temperature_array[1]);
+        Serial.println(temperature_array[2]);
+        Serial.println(temperature_array[3]);
+        Serial.println(temperature_array[4]);
+        Serial.println("END");
+
+        Serial.print("Avg temp: ");
+        Serial.println(avg_temp);
+        
         // Set values to send
         myData.temp_c = avg_temp;
         esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX

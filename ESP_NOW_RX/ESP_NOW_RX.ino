@@ -53,6 +53,10 @@ void setup() {
   // get recv packer info
   esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
   esp_now_register_recv_cb(OnDataRecv);
+
+  // Initialise temp_c
+  myData.temp_c = 24;
+  
 }
 
 void loop() {
