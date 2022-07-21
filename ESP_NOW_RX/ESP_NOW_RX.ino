@@ -27,6 +27,9 @@ void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
   Serial.println();
 }
 
+// ----------------- GLOBAL VARIABLES -------------------
+int button_flag = 0;
+
 // ---------------------- MAIN -----------------------
 void setup() {
   // Initialize Serial Monitor
@@ -52,10 +55,11 @@ void setup() {
   esp_now_register_recv_cb(OnDataRecv);
 }
 
-int button_flag = 0;
 void loop() {
   //Serial.print("button state "); Serial.println(button_flag);
-  if (button_flag == 0 && (myData.temp_c >= 28 || myData.temp_c <= 20)){
+
+  // ------------ Buzzer Alert ------------
+  if (button_flag == 0 && (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     digitalWrite(15, HIGH);
     delay(2);
     digitalWrite(15, LOW);
@@ -68,9 +72,13 @@ void loop() {
   if (!(myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     button_flag = 0;
   }
+
+  // ------------- LED Alert -------------
   if (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP) {
     digitalWrite(16, HIGH);
   } else {
     digitalWrite(16, LOW);
   }
+
+  
 }
