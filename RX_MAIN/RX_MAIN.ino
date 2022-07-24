@@ -12,7 +12,7 @@ typedef struct struct_message {
 } struct_message;
 
 // ----------------- OLED INITIALISATION ------------------
-#define OLED_RESET 4
+#define OLED_RESET 0                      // Changed OLED_RESET from 4 to 0
 Adafruit_SSD1306 display(OLED_RESET);
 
 //
@@ -21,7 +21,10 @@ struct_message myData;
 
 // ----------------- CONSTANTS -------------------
 #define HIGH_TEMP 28
-#define LOW_TEMP 20
+#define LOW_TEMP  20
+#define LEFT_BT   14
+#define RIGHT_BT  12
+#define SELECT_BT 13
 
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
 
@@ -68,9 +71,12 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
   
   // Initialise pins
-  pinMode(15, OUTPUT);  // Buzzer Output
-  pinMode(13, INPUT);   // Button Input
-  pinMode(16, OUTPUT);  // LED Output
+  pinMode(15, OUTPUT);        // Buzzer Output
+  pinMode(13, INPUT);         // Button Input
+  pinMode(16, OUTPUT);        // LED Output
+  pinMode(LEFT_BT, INPUT);    // Left button Input
+  pinMode(RIGHT_BT, INPUT);   // Right button Input
+  pinMode(SELECT_BT, INPUT);  // Select button Input
   
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
@@ -102,7 +108,7 @@ void loop() {
   } 
   if(digitalRead(13)== LOW) {
     button_flag = 1;
-    delay(10);    // This delay is used for debouncing.
+    delay(10);                    // This delay is used for debouncing.
   }
   if (!(myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     button_flag = 0;
@@ -117,5 +123,5 @@ void loop() {
 
   // --------- Display in OLED -----------
   display_temperature(myData.temp_c);
-  display.display();    // Show the display buffer on the screen 
+  display.display();              // Show the display buffer on the screen 
 }
