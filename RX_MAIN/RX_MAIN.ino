@@ -24,6 +24,17 @@ struct_message myData;
 #define RIGHT_BT  12
 #define SELECT_BT 13
 
+// ----------------- GLOBAL VARIABLES -------------------
+int button_flag = 0;
+int state = 0;                    // Set default state to 0
+
+int high_temp_first_digit = 2;
+int high_temp_second_digit = 8;
+int low_temp_first_digit = 1;
+int low_temp_second_digit = 0;
+int high_temp = 28;
+int low_temp = 10;
+
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
 
 // Callback function that will be executed when data is received
@@ -55,28 +66,88 @@ void display_temperature(float temp_c){
 }
 
 void display_set_first_digit_ut() {
+  // Clear the display
+  display.clearDisplay();
+  //Set the color - always use white despite actual display color
+  display.setTextColor(WHITE);
+  //Set the font size
+  display.setTextSize(1);
+  //Set the cursor coordinates
+  display.setCursor(0,0);
+  display.print("Upper Threshold");
+  display.setCursor(0,10);
+  display.print("Set First Digit");
+  display.setCursor(0,20);
+  display.print("Temperature:    "); 
+  display.print(high_temp_first_digit);
+  display.print(high_temp_second_digit);
+  display.print(" C");
+
   return;
 }
+
 void display_set_second_digit_ut() {
+  // Clear the display
+  display.clearDisplay();
+  //Set the color - always use white despite actual display color
+  display.setTextColor(WHITE);
+  //Set the font size
+  display.setTextSize(1);
+  //Set the cursor coordinates
+  display.setCursor(0,0);
+  display.print("Upper Threshold");
+  display.setCursor(0,10);
+  display.print("Set Second Digit");
+  display.setCursor(0,20);
+  display.print("Temperature:    "); 
+  display.print(high_temp_first_digit);
+  display.print(high_temp_second_digit);
+  display.print(" C");
+  
   return;
 }
+
 void display_set_first_digit_lt() {
+  // Clear the display
+  display.clearDisplay();
+  //Set the color - always use white despite actual display color
+  display.setTextColor(WHITE);
+  //Set the font size
+  display.setTextSize(1);
+  //Set the cursor coordinates
+  display.setCursor(0,0);
+  display.print("Lower Threshold");
+  display.setCursor(0,10);
+  display.print("Set First Digit");
+  display.setCursor(0,20);
+  display.print("Temperature:    "); 
+  display.print(low_temp_first_digit);
+  display.print(low_temp_second_digit);
+  display.print(" C");
+  
   return;
 }
+
 void display_set_second_digit_lt() {
+  // Clear the display
+  display.clearDisplay();
+  //Set the color - always use white despite actual display color
+  display.setTextColor(WHITE);
+  //Set the font size
+  display.setTextSize(1);
+  //Set the cursor coordinates
+  display.setCursor(0,0);
+  display.print("Lower Threshold");
+  display.setCursor(0,10);
+  display.print("Set Second Digit");
+  display.setCursor(0,20);
+  display.print("Temperature:    "); 
+  display.print(low_temp_first_digit);
+  display.print(low_temp_second_digit);
+  display.print(" C");
+  
   return;
 }
-
-// ----------------- GLOBAL VARIABLES -------------------
-int button_flag = 0;
-int state = 0;                    // Set default state to 0
-
-int high_temp_first_digit = 2;
-int high_temp_second_digit = 8;
-int low_temp_first_digit = 1;
-int low_temp_second_digit = 0;
-int high_temp = 28;
-int low_temp = 10;
 
 // ---------------------- MAIN -----------------------
 void setup() {
