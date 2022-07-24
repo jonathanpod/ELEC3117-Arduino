@@ -20,8 +20,6 @@ Adafruit_SSD1306 display(OLED_RESET);
 struct_message myData;
 
 // ----------------- CONSTANTS -------------------
-#define HIGH_TEMP 28
-#define LOW_TEMP  20
 #define LEFT_BT   14
 #define RIGHT_BT  12
 #define SELECT_BT 13
@@ -30,7 +28,7 @@ struct_message myData;
 
 // Callback function that will be executed when data is received
 void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
-  memcpy(&myData, incomingData, sizeof(myData));
+  memcpy(&myData, incomingData, sizeof(myData));      // Copies incomingData into myData
   Serial.print("Temperature: ");
   Serial.print(myData.temp_c); 
   Serial.print("*C");
@@ -56,8 +54,29 @@ void display_temperature(float temp_c){
 
 }
 
+void display_set_first_digit_ut() {
+  return;
+}
+void display_set_second_digit_ut() {
+  return;
+}
+void display_set_first_digit_lt() {
+  return;
+}
+void display_set_second_digit_lt() {
+  return;
+}
+
 // ----------------- GLOBAL VARIABLES -------------------
 int button_flag = 0;
+int state = 0;                    // Set default state to 0
+
+int high_temp_first_digit = 2;
+int high_temp_second_digit = 8;
+int low_temp_first_digit = 1;
+int low_temp_second_digit = 0;
+int high_temp = 28;
+int low_temp = 10;
 
 // ---------------------- MAIN -----------------------
 void setup() {
@@ -97,31 +116,110 @@ void setup() {
 }
 
 void loop() {
-  //Serial.print("button state "); Serial.println(button_flag);
 
   // ------------ Buzzer Alert ------------
-  if (button_flag == 0 && (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
+  if (button_flag == 0 && (myData.temp_c >= high_temp || myData.temp_c <= low_temp)){
     digitalWrite(15, HIGH);
     delay(2);
     digitalWrite(15, LOW);
     delay(2);
   } 
-  if(digitalRead(13)== LOW) {
+  if(digitalRead(13) == LOW) {
     button_flag = 1;
     delay(10);                    // This delay is used for debouncing.
   }
-  if (!(myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
+  if (!(myData.temp_c >= high_temp || myData.temp_c <= low_temp)){
     button_flag = 0;
   }
 
   // ------------- LED Alert -------------
-  if (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP) {
+  if (myData.temp_c >= high_temp || myData.temp_c <= low_temp) {
     digitalWrite(16, HIGH);
   } else {
     digitalWrite(16, LOW);
   }
 
-  // --------- Display in OLED -----------
-  display_temperature(myData.temp_c);
-  display.display();              // Show the display buffer on the screen 
+  // -------------- State Check ----------
+  if (state == 0) {
+    display_temperature(myData.temp_c);
+    display.display();              // Show the display buffer on the screen 
+
+    // If user presses SEL button, set the upper threshold bounds.
+    // Move to state 3.
+    if (digitalRead(SELECT_BT) == LOW) {
+      state = 3;
+    }
+    
+  } else if (state == 3) {
+    display_set_first_digit_ut();
+    display.display();
+
+    // If user presses right button, increment first digit.
+    if (digitalRead(RIGHT_BT) == LOW) {
+      high_temp_first_digit++;
+    } else if (digitalRead(LEFT_BT) == LOW) {
+      // If user presses left button, decrement first digit.
+      high_temp_first_digit--;
+    } else if (digitalRead(SELECT_BT) == LOW) {
+      // If user presses SEL button, move to setting second digit.
+      // Move to state 4
+      state = 4;
+    }
+    
+  } else if (state == 4){
+    display_set_second_digit_ut();
+    display.display();
+    
+    // If user presses right button, increment second digit.
+    if (digitalRead(RIGHT_BT) == LOW) {
+      high_temp_second_digit++;
+    } else if (digitalRead(LEFT_BT) == LOW) {
+      // If user presses left button, decrement second digit.
+      high_temp_second_digit--;
+    } else if (digitalRead(SELECT_BT) == LOW) {
+      // If user presses SEL button, move to setting lower threshold.
+      // Move to state 5
+      state = 5;
+    }
+    
+  } else if (state == 5) {
+    display_set_first_digit_lt();
+    display.display();
+
+    // If user presses right button, increment first digit.
+    if (digitalRead(RIGHT_BT) == LOW) {
+      low_temp_first_digit++;
+    } else if (digitalRead(LEFT_BT) == LOW) {
+      // If user presses left button, decrement first digit.
+      low_temp_first_digit--;
+    } else if (digitalRead(SELECT_BT) == LOW) {
+      // If user presses SEL button, move to setting second digit.
+      // Move to state 6
+      state = 6;
+    }
+    
+  } else if (state == 6) {
+    display_set_second_digit_lt();
+    display.display();
+
+    // If user presses right button, increment second digit.
+    if (digitalRead(RIGHT_BT) == LOW) {
+      low_temp_second_digit++;
+    } else if (digitalRead(LEFT_BT) == LOW) {
+      // If user presses left button, decrement second digit.
+      low_temp_second_digit--;
+    } else if (digitalRead(SELECT_BT) == LOW) {
+      // If user presses SEL button, move to display temperature.
+      // Update high_temp and low_temp
+      high_temp = (10 + high_temp_first_digit) + high_temp_second_digit;
+      low_temp = (10 + low_temp_first_digit) + low_temp_second_digit;
+      
+      // Move to state 0
+      state = 0;
+    }
+    
+  } else {
+    Serial.println("State not defined!");
+  }
+  
 }
