@@ -12,7 +12,7 @@ typedef struct struct_message {
 } struct_message;
 
 // ----------------- OLED INITIALISATION ------------------
-#define OLED_RESET 0                      // Changed OLED_RESET from 4 to 0
+#define OLED_RESET -1                      // Reset pin set to -1 (no reset pin)
 Adafruit_SSD1306 display(OLED_RESET);
 
 //
@@ -157,8 +157,9 @@ void setup() {
   // Begin Wire library for I2C
   Wire.begin();
   
-  // Initialize OLED with I2C address 0x3D
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  // Initialize OLED with I2C address 0x3C
+  // Change to 0x3D if doesn't work.
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   
   // Initialise pins
   pinMode(15, OUTPUT);        // Buzzer Output
