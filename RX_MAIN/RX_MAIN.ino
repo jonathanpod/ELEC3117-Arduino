@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Ticker.h>
 
 // ----------------- WI-FI INITIALISATION -----------------
 // Structure example to receive data
@@ -13,11 +14,14 @@ typedef struct struct_message {
 
 // ----------------- OLED INITIALISATION ------------------
 #define OLED_RESET -1                      // Reset pin set to -1 (no reset pin)
-Adafruit_SSD1306 display(OLED_RESET);
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 //
 // Create a struct_message called myData
 struct_message myData;
+
+//Ticker  everyMinute;  
+//SimpleTimer timer;
 
 // ----------------- CONSTANTS -------------------
 #define LEFT_BT   14
@@ -37,19 +41,11 @@ int low_temp = 10;
 
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
 
-// Callback function that will be executed when data is received
-void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
-  memcpy(&myData, incomingData, sizeof(myData));      // Copies incomingData into myData
-  Serial.print("Temperature: ");
-  Serial.print(myData.temp_c); 
-  Serial.print("*C");
-  Serial.println();
-}
-
 // Display the temperature in the OLED display.
-void display_temperature(float temp_c){
+void display_temperature(){
+  Serial.println("START: DISPLAY_TEMPERATURE!");
   
-  // Clear the display
+  //Clear the display
   display.clearDisplay();
   //Set the color - always use white despite actual display color
   display.setTextColor(WHITE);
@@ -59,10 +55,23 @@ void display_temperature(float temp_c){
   display.setCursor(0,0);
   display.print("EnviroHub");
   display.setCursor(0,10); 
-  display.print("Temperature:    "); 
-  display.print(temp_c);
+  display.print("Temperature: "); 
+  display.print(myData.temp_c);
   display.print(" C");
 
+  display.display();
+  Serial.println("END: DISPLAY_TEMPERATURE!");
+  
+  return;
+}
+
+// Callback function that will be executed when data is received
+void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+  Serial.print("Temperature: ");
+  Serial.print(myData.temp_c); 
+  Serial.print("*C");
+  Serial.println();
 }
 
 void display_set_first_digit_ut() {
@@ -149,6 +158,11 @@ void display_set_second_digit_lt() {
   return;
 }
 
+// ----------------- GLOBAL VARIABLES -------------------
+int button_flag = 0;
+const long interval = 2000;
+unsigned long prev_millis = 0;
+
 // ---------------------- MAIN -----------------------
 void setup() {
   // Initialize Serial Monitor
@@ -158,7 +172,6 @@ void setup() {
   Wire.begin();
   
   // Initialize OLED with I2C address 0x3C
-  // Change to 0x3D if doesn't work.
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   
   // Initialise pins
@@ -171,7 +184,8 @@ void setup() {
   
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
-
+  display.clearDisplay();
+  
   // Initialise ESP-NOW
   if (esp_now_init() != 0) {
     Serial.println("Error initializing ESP-NOW");
@@ -183,6 +197,10 @@ void setup() {
   esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
   esp_now_register_recv_cb(OnDataRecv);
 
+  // Set up callback functions
+
+  //everyMinute.attach_ms(2000, display_temperature); // "register" your callback
+  
   // Initialise temp_c to room temperature.
   myData.temp_c = 24;
 }
@@ -198,7 +216,6 @@ void loop() {
   } 
   if(digitalRead(13) == LOW) {
     button_flag = 1;
-    delay(10);                    // This delay is used for debouncing.
   }
   if (!(myData.temp_c >= high_temp || myData.temp_c <= low_temp)){
     button_flag = 0;
@@ -292,6 +309,13 @@ void loop() {
     
   } else {
     Serial.println("State not defined!");
+
+  // --------- Display in OLED -----------
+  unsigned long current_millis = millis();
+  if (current_millis - prev_millis >= interval) {
+    display_temperature();
+    prev_millis = millis();
+
   }
   
 }
