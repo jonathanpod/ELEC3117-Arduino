@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Ticker.h>
 
 // ----------------- WI-FI INITIALISATION -----------------
 // Structure example to receive data
@@ -12,12 +13,15 @@ typedef struct struct_message {
 } struct_message;
 
 // ----------------- OLED INITIALISATION ------------------
-#define OLED_RESET 0                      // Changed OLED_RESET from 4 to 0
-Adafruit_SSD1306 display(OLED_RESET);
+#define OLED_RESET -1                     // Changed OLED_RESET from 4 to -1
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 //
 // Create a struct_message called myData
 struct_message myData;
+
+//Ticker  everyMinute;  
+//SimpleTimer timer;
 
 // ----------------- CONSTANTS -------------------
 #define HIGH_TEMP 28
@@ -28,19 +32,11 @@ struct_message myData;
 
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
 
-// Callback function that will be executed when data is received
-void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
-  memcpy(&myData, incomingData, sizeof(myData));
-  Serial.print("Temperature: ");
-  Serial.print(myData.temp_c); 
-  Serial.print("*C");
-  Serial.println();
-}
-
 // Display the temperature in the OLED display.
-void display_temperature(float temp_c){
+void display_temperature(){
+  Serial.println("START: DISPLAY_TEMPERATURE!");
   
-  // Clear the display
+  //Clear the display
   display.clearDisplay();
   //Set the color - always use white despite actual display color
   display.setTextColor(WHITE);
@@ -50,14 +46,29 @@ void display_temperature(float temp_c){
   display.setCursor(0,0);
   display.print("EnviroHub");
   display.setCursor(0,10); 
-  display.print("Temperature:    "); 
-  display.print(temp_c);
+  display.print("Temperature: "); 
+  display.print(myData.temp_c);
   display.print(" C");
 
+  display.display();
+  Serial.println("END: DISPLAY_TEMPERATURE!");
+  
+  return;
+}
+
+// Callback function that will be executed when data is received
+void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+  Serial.print("Temperature: ");
+  Serial.print(myData.temp_c); 
+  Serial.print("*C");
+  Serial.println();
 }
 
 // ----------------- GLOBAL VARIABLES -------------------
 int button_flag = 0;
+const long interval = 2000;
+unsigned long prev_millis = 0;
 
 // ---------------------- MAIN -----------------------
 void setup() {
@@ -67,8 +78,8 @@ void setup() {
   // Begin Wire library for I2C
   Wire.begin();
   
-  // Initialize OLED with I2C address 0x3D
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  // Initialize OLED with I2C address 0x3C
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   
   // Initialise pins
   pinMode(15, OUTPUT);        // Buzzer Output
@@ -80,7 +91,8 @@ void setup() {
   
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
-
+  display.clearDisplay();
+  
   // Initialise ESP-NOW
   if (esp_now_init() != 0) {
     Serial.println("Error initializing ESP-NOW");
@@ -92,13 +104,17 @@ void setup() {
   esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
   esp_now_register_recv_cb(OnDataRecv);
 
+  // Set up callback functions
+
+  //everyMinute.attach_ms(2000, display_temperature); // "register" your callback
+  
   // Initialise temp_c to room temperature.
   myData.temp_c = 24;
 }
 
 void loop() {
   //Serial.print("button state "); Serial.println(button_flag);
-
+  
   // ------------ Buzzer Alert ------------
   if (button_flag == 0 && (myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     digitalWrite(15, HIGH);
@@ -106,9 +122,8 @@ void loop() {
     digitalWrite(15, LOW);
     delay(2);
   } 
-  if(digitalRead(13)== LOW) {
+  if(digitalRead(13) == LOW) {
     button_flag = 1;
-    delay(10);                    // This delay is used for debouncing.
   }
   if (!(myData.temp_c >= HIGH_TEMP || myData.temp_c <= LOW_TEMP)){
     button_flag = 0;
@@ -122,6 +137,10 @@ void loop() {
   }
 
   // --------- Display in OLED -----------
-  display_temperature(myData.temp_c);
-  display.display();              // Show the display buffer on the screen 
+  unsigned long current_millis = millis();
+  if (current_millis - prev_millis >= interval) {
+    display_temperature();
+    prev_millis = millis();
+  }
+  
 }
