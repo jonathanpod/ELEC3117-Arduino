@@ -42,6 +42,13 @@ int low_temp_second_digit = 0;
 int high_temp = 28;
 int low_temp = 10;
 
+int t_high_temp_first_digit = high_temp_first_digit;
+int t_high_temp_second_digit = high_temp_second_digit;
+int t_low_temp_first_digit = low_temp_first_digit;
+int t_low_temp_second_digit = low_temp_second_digit;
+
+int buzzer_ringing = 0;
+
 // --------------------- USER-DEFINED FUNCTIONS --------------------------
 
 // Callback function that will be executed when data is received
@@ -68,6 +75,14 @@ void display_temperature(){
   display.setCursor(0,10); 
   display.print("Temperature: "); 
   display.print(myData.temp_c);
+  display.print(" C");
+  display.setCursor(0,20); 
+  display.print("Upper Limit: "); 
+  display.print(high_temp);
+  display.print(" C");
+  display.setCursor(0,30); 
+  display.print("Lower Limit: "); 
+  display.print(low_temp);
   display.print(" C");
 
   display.display();
@@ -213,13 +228,19 @@ void loop() {
     delay(2);
     digitalWrite(15, LOW);
     delay(2);
+
+    // Overwrite state to go to main temperature menu.
+    state = 0;
+    buzzer_ringing = 1;
   } 
-  if(digitalRead(13) == LOW) {
+  if (digitalRead(SELECT_BT) == LOW) {
     delay(DL);
     button_flag = 1;
+    buzzer_ringing = 0;
   }
   if (!(myData.temp_c >= high_temp || myData.temp_c <= low_temp)){
     button_flag = 0;
+    buzzer_ringing = 0;
   }
 
   // ------------- LED Alert -------------
@@ -233,10 +254,22 @@ void loop() {
   if (state == 0) {
     display_temperature();
 
+    // Reset high temperature and low temperature if state was overwritten to state 0.
+    if (buzzer_ringing == 1) {
+      high_temp_first_digit = t_high_temp_first_digit;
+      high_temp_second_digit = t_high_temp_second_digit;
+      low_temp_first_digit = t_low_temp_first_digit;
+      low_temp_second_digit = t_low_temp_second_digit;
+    }
+
     // If user presses SEL button, set the upper threshold bounds.
     // Move to state 3.
-    if (digitalRead(SELECT_BT) == LOW) {
+    if (digitalRead(SELECT_BT) == LOW && buzzer_ringing == 0) {
       delay(DL);
+      t_high_temp_first_digit = high_temp_first_digit;
+      t_high_temp_second_digit = high_temp_second_digit;
+      t_low_temp_first_digit = low_temp_first_digit;
+      t_low_temp_second_digit = low_temp_second_digit;
       state = 3;
     }
     
