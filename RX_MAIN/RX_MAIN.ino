@@ -3,14 +3,22 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Ticker.h>
 
 // ----------------- WI-FI INITIALISATION -----------------
 // Structure example to receive data
 // Must match the sender structure
+
+// MAC address of temperature sensor.
+uint8_t broadcastAddress[] = {0xA4, 0xE5, 0x7C, 0x2C, 0xF5, 0x72};
+
 typedef struct struct_message {
     float temp_c;
 } struct_message;
+
+typedef struct Threshold {
+  int high_temp = 28;
+  int low_temp = 10;
+} Threshold;
 
 // ----------------- OLED INITIALISATION ------------------
 #define OLED_RESET -1                      // Reset pin set to -1 (no reset pin)
@@ -19,6 +27,7 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 //
 // Create a struct_message called myData
 struct_message myData;
+Threshold threshold_payload;
 
 //Ticker  everyMinute;  
 //SimpleTimer timer;
@@ -60,6 +69,17 @@ void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
   Serial.println();
 }
 
+// Callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  Serial.print("Last Packet Send Status: ");
+  if (sendStatus == 0){
+    Serial.println("Delivery success");
+  }
+  else{
+    Serial.println("Delivery fail");
+  }
+}
+
 // Display the temperature in the OLED display.
 void display_temperature(){
     
@@ -71,7 +91,7 @@ void display_temperature(){
   display.setTextSize(1);
   //Set the cursor coordinates
   display.setCursor(0,0);
-  display.print("EnviroHub");
+  display.print("     EnviroHub");
   display.setCursor(0,10); 
   display.print("Temperature: "); 
   display.print(myData.temp_c);
@@ -207,14 +227,13 @@ void setup() {
     return;
   }
   
-  // Once ESPNow is successfully Init, we will register for recv CB to
-  // get recv packer info
-  esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  // Register callbacks
+  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
   esp_now_register_recv_cb(OnDataRecv);
-
-  // Set up callback functions
-
-  //everyMinute.attach_ms(2000, display_temperature); // "register" your callback
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register peer
+  esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
   
   // Initialise temp_c to room temperature.
   myData.temp_c = 24;
@@ -408,6 +427,12 @@ void loop() {
       Serial.println(high_temp);
       Serial.print("New lower threshold: ");
       Serial.println(low_temp);
+
+      // Send the new threshold to temperature sensor.
+      threshold_payload.high_temp = high_temp;
+      threshold_payload.low_temp = low_temp;
+      esp_now_send(broadcastAddress, (uint8_t *) &threshold_payload, sizeof(threshold_payload));
+      
     }
     
   } else {
