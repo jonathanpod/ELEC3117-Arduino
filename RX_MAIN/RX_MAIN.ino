@@ -27,6 +27,7 @@ struct_message myData;
 #define LEFT_BT   14
 #define RIGHT_BT  12
 #define SELECT_BT 13
+#define DL 100
 
 // ----------------- GLOBAL VARIABLES -------------------
 int button_flag = 0;
@@ -214,6 +215,7 @@ void loop() {
     delay(2);
   } 
   if(digitalRead(13) == LOW) {
+    delay(DL);
     button_flag = 1;
   }
   if (!(myData.temp_c >= high_temp || myData.temp_c <= low_temp)){
@@ -234,6 +236,7 @@ void loop() {
     // If user presses SEL button, set the upper threshold bounds.
     // Move to state 3.
     if (digitalRead(SELECT_BT) == LOW) {
+      delay(DL);
       state = 3;
     }
     
@@ -242,6 +245,7 @@ void loop() {
 
     // If user presses right button, increment first digit.
     if (digitalRead(RIGHT_BT) == LOW) {
+      delay(DL);
       high_temp_first_digit++;
 
       // Wrap around the digit. Limit digit to 0-9
@@ -253,6 +257,7 @@ void loop() {
       
     } else if (digitalRead(LEFT_BT) == LOW) {
       // If user presses left button, decrement first digit.
+      delay(DL);
       high_temp_first_digit--;
 
       // Wrap around the digit. Limit digit to 0-9
@@ -265,6 +270,7 @@ void loop() {
     } else if (digitalRead(SELECT_BT) == LOW) {
       // If user presses SEL button, move to setting second digit.
       // Move to state 4
+      delay(DL);
       state = 4;
     }
     
@@ -273,6 +279,7 @@ void loop() {
     
     // If user presses right button, increment second digit.
     if (digitalRead(RIGHT_BT) == LOW) {
+      delay(DL);
       high_temp_second_digit++;
       // Wrap around the digit. Limit digit to 0-9
       if (high_temp_second_digit > 9) {
@@ -283,6 +290,7 @@ void loop() {
       
     } else if (digitalRead(LEFT_BT) == LOW) {
       // If user presses left button, decrement second digit.
+      delay(DL);
       high_temp_second_digit--;
       // Wrap around the digit. Limit digit to 0-9
       if (high_temp_second_digit > 9) {
@@ -294,6 +302,7 @@ void loop() {
     } else if (digitalRead(SELECT_BT) == LOW) {
       // If user presses SEL button, move to setting lower threshold.
       // Move to state 5
+      delay(DL);
       state = 5;
     }
     
@@ -302,6 +311,7 @@ void loop() {
 
     // If user presses right button, increment first digit.
     if (digitalRead(RIGHT_BT) == LOW) {
+      delay(DL);
       low_temp_first_digit++;
       // Wrap around the digit. Limit digit to 0-9
       if (low_temp_first_digit > 9) {
@@ -312,6 +322,7 @@ void loop() {
       
     } else if (digitalRead(LEFT_BT) == LOW) {
       // If user presses left button, decrement first digit.
+      delay(DL);
       low_temp_first_digit--;
       // Wrap around the digit. Limit digit to 0-9
       if (low_temp_first_digit > 9) {
@@ -331,6 +342,7 @@ void loop() {
 
     // If user presses right button, increment second digit.
     if (digitalRead(RIGHT_BT) == LOW) {
+      delay(DL);
       low_temp_second_digit++;
       // Wrap around the digit. Limit digit to 0-9
       if (low_temp_second_digit > 9) {
@@ -341,6 +353,7 @@ void loop() {
       
     } else if (digitalRead(LEFT_BT) == LOW) {
       // If user presses left button, decrement second digit.
+      delay(DL);
       low_temp_second_digit--;
       // Wrap around the digit. Limit digit to 0-9
       if (low_temp_second_digit > 9) {
@@ -352,6 +365,7 @@ void loop() {
     } else if (digitalRead(SELECT_BT) == LOW) {
       // If user presses SEL button, move to display temperature.
       // Update high_temp and low_temp
+      delay(DL);
       high_temp = (10 * high_temp_first_digit) + high_temp_second_digit;
       low_temp = (10 * low_temp_first_digit) + low_temp_second_digit;
       
