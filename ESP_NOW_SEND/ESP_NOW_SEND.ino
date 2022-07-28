@@ -19,11 +19,19 @@ typedef struct struct_message {
   float temp_c;
 } struct_message;
 
+typedef struct Threshold {
+  int high_temp = 28;
+  int low_temp = 10;
+} Threshold;
+
 // Create a struct_message called myData
 struct_message myData;
+Threshold threshold_payload;
 
 // ----------------- GLOBAL VARIABLES -------------------
-unsigned long last_time = 0;  
+unsigned long last_time = 0;
+int high_temp = 28;
+int low_temp = 10;
 unsigned long timer_delay = 3000; // Timer delay = 3 seconds initially
 int reading_count = 0;
 int flag = 0;
@@ -42,6 +50,14 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
   }
 }
 
+// Callback function that will be executed when data is received
+void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
+  memcpy(&threshold_payload, incomingData, sizeof(threshold_payload));
+  Serial.print("Received packet!");
+  Serial.print(threshold_payload.high_temp);
+  Serial.println(threshold_payload.low_temp);
+}
+
 // ---------------------- MAIN -----------------------
 void setup() {
   // Init Serial Monitor
@@ -58,11 +74,12 @@ void setup() {
 
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
-  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
   esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
   
   // Register peer
-  esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+  esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
   // Check if sensor address is correct.
   if (!tempsensor.begin(0x18)) {
@@ -88,8 +105,16 @@ void loop() {
     // Set values to send
     myData.temp_c = c;
 
+    // Update threshold temperatures.
+    high_temp = threshold_payload.high_temp;
+    low_temp = threshold_payload.low_temp;
+    Serial.print("New Upper Temperature: ");
+    Serial.println(high_temp);
+    Serial.print("New Lower Temperature: ");
+    Serial.println(low_temp);
+
     // If reading is higher or lower than threshold.
-    if (c >= HIGH_TEMP || c <= LOW_TEMP) {
+    if (c >= high_temp || c <= low_temp) {
       // Increase sampling time and alert the receiver.
       esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
       timer_delay = 2000;  // Set new sampling interval to 2 seconds.
@@ -102,7 +127,7 @@ void loop() {
 
       flag = 1; 
       
-    } else if (flag == 1 && c <= HIGH_TEMP && c >= LOW_TEMP){
+    } else if (flag == 1 && c <= high_temp && c >= low_temp){
       
       myData.temp_c = c;
       esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
