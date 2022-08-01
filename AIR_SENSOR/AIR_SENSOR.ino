@@ -1,10 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <espnow.h>
 #include <Wire.h>
-#include "Adafruit_MCP9808.h"
 
-// Initialise the Adafruit temperature sensor.
-Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
+// ----------------- CONSTANTS -----------------
+#define PREHEAT 12
 
 // ----------------- WI-FI INITIALISATION -----------------
 // Broadcast Address of Central Hub
@@ -59,7 +58,10 @@ void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
 void setup() {
   // Init Serial Monitor
   Serial.begin(9600);
- 
+
+  // Initialise pins
+  pinMode(PREHEAT, OUTPUT);    // GPIO12 is used for pre-heating
+  
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
 
@@ -78,14 +80,15 @@ void setup() {
   // Register peer
   esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
-  // Check if sensor address is correct.
-  if (!tempsensor.begin(0x18)) {
-    Serial.println("Couldn't find MCP9808! Check your connections and verify the address is correct.");
-    while (1);
-  }
-
-  // Temperature Sensor Setup
-  tempsensor.setResolution(3);
+  // Pre-heat the air sensor.
+  // Turn on GPIO12. This is used to pre-heat the sensor.
+  // Pre-heat for 1 minute, then turn off.
+  digitalWrite(PREHEAT, HIGH);
+  delay(60000);
+  digitalWrite(PREHEAT, LOW);
+  
+  
+  
 }
 
 void loop() {
