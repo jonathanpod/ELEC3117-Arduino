@@ -5,9 +5,6 @@
 #include <Adafruit_SSD1306.h>
 
 // ----------------- WI-FI INITIALISATION -----------------
-// Structure example to receive data
-// Must match the sender structure
-
 // MAC address of temperature sensor.
 uint8_t broadcastAddress[] = {0xA4, 0xE5, 0x7C, 0x2C, 0xF5, 0x72};
 

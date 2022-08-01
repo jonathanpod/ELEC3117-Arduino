@@ -1,100 +1,167 @@
-
-/**************************************************************************/
-/*!
-This is a demo for the Adafruit MCP9808 breakout
-----> http://www.adafruit.com/products/1782
-Adafruit invests time and resources providing this open source code,
-please support Adafruit and open-source hardware by purchasing
-products from Adafruit!
-*/
-/**************************************************************************/
-
+#include <ESP8266WiFi.h>
+#include <espnow.h>
 #include <Wire.h>
 #include "Adafruit_MCP9808.h"
 
-// Create the MCP9808 temperature sensor object
+// Initialise the Adafruit temperature sensor.
 Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
 
+// ----------------- WI-FI INITIALISATION -----------------
+// Broadcast Address of Central Hub
+uint8_t broadcastAddress[] = {0xA8, 0x48, 0xFA, 0xE6, 0x58, 0x55};
+
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message {
+  float temp_c;
+} struct_message;
+
+typedef struct Threshold {
+  int high_temp = 28;
+  int low_temp = 10;
+} Threshold;
+
+// Create a struct_message called myData
+struct_message myData;
+Threshold threshold_payload;
+
+// ----------------- GLOBAL VARIABLES -------------------
+unsigned long last_time = 0;
+int high_temp = 28;
+int low_temp = 10;
+unsigned long timer_delay = 3000; // Timer delay = 3 seconds initially
+int reading_count = 0;
+int flag = 0;
+float temperature_array[5];
+
+// --------------------- USER-DEFINED FUNCTIONS --------------------------
+
+// Callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  Serial.print("Last Packet Send Status: ");
+  if (sendStatus == 0){
+    Serial.println("Delivery success");
+  }
+  else{
+    Serial.println("Delivery fail");
+  }
+}
+
+// Callback function that will be executed when data is received
+void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
+  memcpy(&threshold_payload, incomingData, sizeof(threshold_payload));
+  Serial.print("Received packet!");
+  Serial.print(threshold_payload.high_temp);
+  Serial.println(threshold_payload.low_temp);
+}
+
+// ---------------------- MAIN -----------------------
 void setup() {
+  // Init Serial Monitor
   Serial.begin(9600);
-  while (!Serial); //waits for serial terminal to be open, necessary in newer arduino boards.
-  Serial.println("MCP9808 demo");
+ 
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Init ESP-NOW
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register the callback functions
+  // Initialise the role of ESP8266
+  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+  esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
   
-  // Make sure the sensor is found, you can also pass in a different i2c
-  // address with tempsensor.begin(0x19) for example, also can be left in blank for default address use
-  // Also there is a table with all addres possible for this sensor, you can connect multiple sensors
-  // to the same i2c bus, just configure each sensor with a different address and define multiple objects for that
-  //  A2 A1 A0 address
-  //  0  0  0   0x18  this is the default address
-  //  0  0  1   0x19
-  //  0x  1  0   0x1A
-  //  0  1  1   0x1B
-  //  1  0  0   0x1C
-  //  1  0  1   0x1D
-  //  1  1  0   0x1E
-  //  1  1  1   0x1F
-  
+  // Register peer
+  esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
-
-   if (!tempsensor.begin(0x18)) {
-    Serial.println("0x18");
-  }
-     if (!tempsensor.begin(0x19)) {
-    Serial.println("0x19");
-  }
-     if (!tempsensor.begin(0x1A)) {
-    Serial.println("0x1A");
-  }
-     if (!tempsensor.begin(0x1B)) {
-    Serial.println("0x1B");
-  }
-     if (!tempsensor.begin(0x1C)) {
-    Serial.println("0x1C");
-  }
-
-     if (!tempsensor.begin(0x1D)) {
-    Serial.println("0x1D");
-  }
-     if (!tempsensor.begin(0x1E)) {
-    Serial.println("0x1E");
-  }
-
-     if (!tempsensor.begin(0x1F)) {
-    Serial.println("0x1F");
-  }
-  
- if (!tempsensor.begin(0x18)) {
+  // Check if sensor address is correct.
+  if (!tempsensor.begin(0x18)) {
     Serial.println("Couldn't find MCP9808! Check your connections and verify the address is correct.");
     while (1);
   }
 
-  
-   Serial.println("Found MCP9808!");
-
-  tempsensor.setResolution(3); // sets the resolution mode of reading, the modes are defined in the table bellow:
-  // Mode Resolution SampleTime
-  //  0    0.5°C       30 ms
-  //  1    0.25°C      65 ms
-  //  2    0.125°C     130 ms
-  //  3    0.0625°C    250 ms
+  // Temperature Sensor Setup
+  tempsensor.setResolution(3);
 }
 
 void loop() {
-  Serial.println("wake up MCP9808.... "); // wake up MCP9808 - power consumption ~200 mikro Ampere
-  tempsensor.wake();   // wake up, ready to read!
+  if ((millis() - last_time) > timer_delay) {    
+    
+    // Wake up sensor and read temperature.
+    tempsensor.wake(); 
+    float c = tempsensor.readTempC();
 
-  // Read and print out the temperature, also shows the resolution mode used for reading.
-  Serial.print("Resolution in mode: ");
-  Serial.println (tempsensor.getResolution());
-  float c = tempsensor.readTempC();
-  float f = tempsensor.readTempF();
-  Serial.print("Temp: "); 
-  Serial.print(c, 4); Serial.print("*C\t and "); 
-  Serial.print(f, 4); Serial.println("*F.");
-  
-  delay(2000);
-  Serial.println("Shutdown MCP9808.... ");
-  tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
-  Serial.println("");
-  delay(200);
+    delay(1000);
+    tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
+    delay(200);
+
+    // Set values to send
+    myData.temp_c = c;
+
+    // Update threshold temperatures.
+    high_temp = threshold_payload.high_temp;
+    low_temp = threshold_payload.low_temp;
+    Serial.print("New Upper Temperature: ");
+    Serial.println(high_temp);
+    Serial.print("New Lower Temperature: ");
+    Serial.println(low_temp);
+
+    // If reading is higher or lower than threshold.
+    if (c >= high_temp || c <= low_temp) {
+      // Increase sampling time and alert the receiver.
+      esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
+      timer_delay = 2000;  // Set new sampling interval to 2 seconds.
+
+      reading_count = 0;
+
+      Serial.print("WARNING! ");
+      Serial.print(c, 4);
+      Serial.println("*C\t");
+
+      flag = 1; 
+      
+    } else if (flag == 1 && c <= high_temp && c >= low_temp){
+      
+      myData.temp_c = c;
+      esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
+      flag = 0;
+      
+    } else {
+      timer_delay = 3000; // Else set it to 3 seconds.
+      
+      // Append to temperature_array.
+      temperature_array[reading_count] = c;    
+      reading_count++;
+
+      // If it has read 5 values, average and reset the counter.
+      // Normal state means that temperature value is within the range.
+      if (reading_count >= 5) {
+        float avg_temp = temperature_array[0] + temperature_array[1] + temperature_array[2] + temperature_array[3] + temperature_array[4];
+        avg_temp = avg_temp / 5;
+
+        Serial.println("START");
+        Serial.println(temperature_array[0]);
+        Serial.println(temperature_array[1]);
+        Serial.println(temperature_array[2]);
+        Serial.println(temperature_array[3]);
+        Serial.println(temperature_array[4]);
+        Serial.println("END");
+
+        Serial.print("Avg temp: ");
+        Serial.println(avg_temp);
+        
+        // Set values to send
+        myData.temp_c = avg_temp;
+        esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
+      
+        reading_count = 0;
+      }
+    }
+    
+    last_time = millis();  // Update the last_time variable
+  }
 }
