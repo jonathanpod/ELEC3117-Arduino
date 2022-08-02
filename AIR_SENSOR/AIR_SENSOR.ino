@@ -4,6 +4,8 @@
 
 // ----------------- CONSTANTS -----------------
 #define PREHEAT 12
+#define MUX 14
+#define ADC A0
 
 // ----------------- WI-FI INITIALISATION -----------------
 // Broadcast Address of Central Hub
@@ -20,9 +22,14 @@ typedef struct Threshold {
   int low_temp = 10;
 } Threshold;
 
+typedef struct State {
+  int state = 6;
+} State;
+
 // Create a struct_message called myData
 struct_message myData;
 Threshold threshold_payload;
+State state_payload;
 
 // ----------------- GLOBAL VARIABLES -------------------
 unsigned long last_time = 0;
@@ -48,10 +55,8 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 
 // Callback function that will be executed when data is received
 void OnDataRecv(uint8_t * mac, uint8_t *incomingData, uint8_t len) {
-  memcpy(&threshold_payload, incomingData, sizeof(threshold_payload));
+  memcpy(&state_payload, incomingData, sizeof(state_payload));
   Serial.print("Received packet!");
-  Serial.print(threshold_payload.high_temp);
-  Serial.println(threshold_payload.low_temp);
 }
 
 // ---------------------- MAIN -----------------------
@@ -61,6 +66,7 @@ void setup() {
 
   // Initialise pins
   pinMode(PREHEAT, OUTPUT);    // GPIO12 is used for pre-heating
+  pinMode(MUX, OUTPUT);
   
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
@@ -93,6 +99,9 @@ void setup() {
 
 void loop() {
   if ((millis() - last_time) > timer_delay) {    
+
+    // Read ADC
+    adc_value = analogRead(ADC); // Read the Analog Input value
     
     // Wake up sensor and read temperature.
     tempsensor.wake(); 
