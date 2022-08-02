@@ -6,11 +6,8 @@
 // Initialise the Adafruit temperature sensor.
 Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
 
-// ----------------- CONSTANTS -------------------
-#define HIGH_TEMP 28
-#define LOW_TEMP 20
-
 // ----------------- WI-FI INITIALISATION -----------------
+// Broadcast Address of Central Hub
 uint8_t broadcastAddress[] = {0xA8, 0x48, 0xFA, 0xE6, 0x58, 0x55};
 
 // Structure example to send data
@@ -72,8 +69,8 @@ void setup() {
     return;
   }
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
+  // Register the callback functions
+  // Initialise the role of ESP8266
   esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);

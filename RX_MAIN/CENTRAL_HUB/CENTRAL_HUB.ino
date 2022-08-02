@@ -5,9 +5,6 @@
 #include <Adafruit_SSD1306.h>
 
 // ----------------- WI-FI INITIALISATION -----------------
-// Structure example to receive data
-// Must match the sender structure
-
 // MAC address of temperature sensor.
 uint8_t broadcastAddress[] = {0xA4, 0xE5, 0x7C, 0x2C, 0xF5, 0x72};
 
@@ -28,9 +25,6 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 // Create a struct_message called myData
 struct_message myData;
 Threshold threshold_payload;
-
-//Ticker  everyMinute;  
-//SimpleTimer timer;
 
 // ----------------- CONSTANTS -------------------
 #define LEFT_BT   14
