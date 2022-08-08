@@ -23,14 +23,14 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 //
 // Create a struct_message called myData
-struct_message myData;
-Threshold threshold_payload;
+struct_message  myData;
+Threshold       threshold_payload;
 
 // ----------------- CONSTANTS -------------------
-#define LEFT_BT   14
-#define RIGHT_BT  12
-#define SELECT_BT 13
-#define DL 100
+#define LEFT_BT     14
+#define RIGHT_BT    12
+#define SELECT_BT   13
+#define DL          100
 
 // ----------------- GLOBAL VARIABLES -------------------
 int button_flag = 0;

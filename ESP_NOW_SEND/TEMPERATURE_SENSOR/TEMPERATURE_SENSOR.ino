@@ -29,7 +29,7 @@ Threshold threshold_payload;
 unsigned long last_time = 0;
 int high_temp = 28;
 int low_temp = 10;
-unsigned long timer_delay = 3000; // Timer delay = 3 seconds initially
+unsigned long timer_delay = 360000; // Timer delay = 6 minutes initially
 int reading_count = 0;
 int flag = 0;
 float temperature_array[5];
@@ -96,7 +96,7 @@ void loop() {
     float c = tempsensor.readTempC();
 
     delay(1000);
-    tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
+    tempsensor.shutdown_wake(1); // shutdown temperature sensor
     delay(200);
 
     // Set values to send
@@ -114,7 +114,7 @@ void loop() {
     if (c >= high_temp || c <= low_temp) {
       // Increase sampling time and alert the receiver.
       esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));  // Send data to RX
-      timer_delay = 2000;  // Set new sampling interval to 2 seconds.
+      timer_delay = 60000;  // Set new sampling interval to 1 minute.
 
       reading_count = 0;
 
@@ -131,7 +131,7 @@ void loop() {
       flag = 0;
       
     } else {
-      timer_delay = 3000; // Else set it to 3 seconds.
+      timer_delay = 360000; // Else set it to 6 minutes
       
       // Append to temperature_array.
       temperature_array[reading_count] = c;    
